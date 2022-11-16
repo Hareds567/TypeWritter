@@ -1,0 +1,124 @@
+.TypeWriter-container {
+  position: relative;
+  height: 7em;
+}
+
+.writeContainer {
+  display: flex;
+  box-sizing: border-box;
+  position: relative;
+  align-items: center;
+  border-radius: 0;
+  flex-wrap: wrap;
+  max-width: 1250px;
+  max-height: 8em;
+  column-gap: 8px;
+  row-gap: 0.8em;
+  cursor: default;
+  z-index: 9;
+  overflow: hidden;
+  user-select: none;
+}
+.writeContainer:focus {
+  border: none;
+  outline: none;
+}
+
+.onBlur {
+  filter: blur(0.6rem);
+  transition: all 0.25s ease 0s;
+}
+
+.outOfFocusMessage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  cursor: pointer;
+  transition: all 0.25s ease 0s;
+}
+.incorrect,
+.visited,
+.letter {
+  position: relative;
+  display: inline-block;
+  font-size: 1.6em;
+  font-weight: 300;
+  font-family: "Roboto Mono", "Roboto Mono", "Vazirmatn";
+}
+
+.word {
+  position: relative;
+  display: flex;
+  gap: 1.2px;
+  border: 2px solid var(--color-1);
+}
+.isBugged {
+  transition: all 0.15s ease 0s;
+  border-bottom-color: #ca4754;
+}
+
+.visited {
+  color: var(--color-2);
+}
+.incorrect {
+  color: #ca4754;
+}
+
+.letter {
+  position: relative;
+  color: var(--color-3);
+}
+
+.isDeleting,
+.verticalLine {
+  position: absolute;
+  padding: 0;
+  margin: 0;
+  width: 0.9px;
+  height: 1.1em;
+  top: 0;
+  right: 0;
+  outline: 1px solid var(--color-4);
+  border-radius: 2%;
+  transform-origin: top-left;
+  background-color: var(--color-4);
+}
+.verticalLine {
+  animation-name: blink;
+  animation-duration: 50ms;
+  /* animation-iteration-count: forwards; */
+  animation-direction: normal;
+}
+
+.isDeleting {
+  animation-name: blink2;
+  animation-duration: 50ms;
+  animation-direction: normal;
+}
+
+.start {
+  left: -1.1px !important;
+}
+@keyframes blink {
+  from {
+    /* opacity: 0; */
+    right: 1ch;
+  }
+  to {
+    /* opacity: 1; */
+    right: 0;
+  }
+}
+
+@keyframes blink2 {
+  from {
+    /* opacity: 0; */
+    right: -1ch;
+  }
+  to {
+    /* opacity: 1; */
+    right: 0;
+  }
+}

@@ -1,0 +1,10 @@
+.header {
+  display: flex;
+  padding: 1rem 0;
+}
+.title {
+  font: 400;
+  font-size: 35px;
+  cursor: default;
+  vertical-align: top;
+}
