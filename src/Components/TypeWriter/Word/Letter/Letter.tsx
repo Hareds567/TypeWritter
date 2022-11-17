@@ -36,10 +36,10 @@ const Letter: React.FC<Props> = ({
     <>
       <div
         className={
-          letterObj.wasVisited
-            ? "visited"
-            : letterObj.incorrect
+          letterObj.incorrect
             ? "incorrect "
+            : letterObj.wasVisited
+            ? "visited"
             : "letter"
         }
       >

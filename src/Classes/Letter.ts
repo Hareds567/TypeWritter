@@ -3,6 +3,7 @@ export class Letter {
   id: number;
   wasVisited: boolean = false;
   incorrect: boolean = false;
+  wasAdded: boolean = false;
 
   constructor(string: string, id: number) {
     this.letter = string;

@@ -9,32 +9,48 @@ import { sentenceToWordArr } from "../../Methods/TypeWriter/TypeWriter";
 import { getShortStory } from "../../API/Documents";
 //Components
 import { Word as WordContainer } from "./Word/Word";
-import { TIMEOUT } from "dns";
+
 //Methods
 import { calculateWPM } from "../../Methods/Graph/Graph";
-// import { clearInterval } from "timers";
+import Letter from "../../Classes/Letter";
 
-type Data = {
+export type Data = {
+  labels: Array<number>;
   wpm_Arr: Array<number>;
   raw_wpm_Arr: Array<number>;
   numberOfCorrectInputs: number;
   numberOfIncorrectInputs: number;
   totalNumberOfInputs: number;
+  totalTime: number;
   accuracy: number;
 };
 
+export function createEmptyData() {
+  const data: Data = {
+    labels: [],
+    numberOfCorrectInputs: 0,
+    numberOfIncorrectInputs: 0,
+    totalNumberOfInputs: 0,
+    raw_wpm_Arr: [],
+    wpm_Arr: [],
+    accuracy: 0,
+    totalTime: 0,
+  };
+  return data;
+}
 //Difference in time
 //Total number of word written in that time
 
 interface Props {
   refresh: boolean;
   set_Refresh: React.Dispatch<React.SetStateAction<boolean>>;
+  set_Data: React.Dispatch<React.SetStateAction<Data>>;
 }
 
 const text =
   "better known by his pen name and, later, legal name Pablo Neruda, was a Chilean poet-diplomat and politician who won the 1971 Nobel Prize in Literature.";
 
-const TypeWriter: FC<Props> = ({ refresh, set_Refresh }) => {
+const TypeWriter: FC<Props> = ({ refresh, set_Refresh, set_Data }) => {
   //Text
   const [wordArr, set_wordArr] = useState<Word[]>([]);
   //Containers
@@ -51,6 +67,11 @@ const TypeWriter: FC<Props> = ({ refresh, set_Refresh }) => {
   //Typing Data values
   const [currentWord, set_currentWord] = useState<Word>();
   const isDeleting = useRef(false);
+  //Stats Values
+  const initialTime = useRef(0);
+  const finalTime = useRef(0);
+  const [isActive, set_isActive] = useState(false);
+  const data = useRef<Data>(createEmptyData());
 
   //====================================================================
   function enableFocus(e: KeyboardEvent) {
@@ -69,6 +90,10 @@ const TypeWriter: FC<Props> = ({ refresh, set_Refresh }) => {
     focusContainer();
     if (refresh) {
       set_wordArr(sentenceToWordArr(text));
+      initialTime.current = 0;
+      finalTime.current = 0;
+      set_isActive(false);
+      data.current = createEmptyData();
       lineWidth.current = 0;
       lineWordCount.current = 0;
       lineNum.current = 0;
@@ -78,6 +103,8 @@ const TypeWriter: FC<Props> = ({ refresh, set_Refresh }) => {
       active_letter_indx.current = { word_idx: 0, letter_idx: 0 };
       container.current !== document.activeElement &&
         container.current?.focus();
+      //Reset Stats
+
       set_isFocused(true);
       set_Refresh(false);
     }
@@ -121,14 +148,9 @@ const TypeWriter: FC<Props> = ({ refresh, set_Refresh }) => {
     const nextElementSibling =
       currentWordElement.nextElementSibling as HTMLScriptElement;
     lineWidth.current += currentWordElement.offsetWidth + 8;
-    // parseInt(
-    //   window.getComputedStyle(currentWordElement).getPropertyValue("width")
-    // ) + 8;
+
     //Get next word width
     const nextWordWidth = nextElementSibling.offsetWidth;
-
-    console.log("NEXT SIBLING: ");
-    console.log(currentWordElement.nextElementSibling);
 
     //Check if we are at the end of the current line
     //If so update Word array
@@ -144,8 +166,6 @@ const TypeWriter: FC<Props> = ({ refresh, set_Refresh }) => {
         lineNum.current += 1;
         lineWidth.current = 0;
         lineWordCount.current = 0;
-
-        console.log("-------------------------------------------------------");
         return;
       }
       // If line = 2 update the Word array and update values
@@ -158,7 +178,6 @@ const TypeWriter: FC<Props> = ({ refresh, set_Refresh }) => {
         lineWidth.current = 0;
         lineWordCount.current = 0;
         lastWordIdx.current = wordIndex2.current;
-        console.log("-------------------------------------------------------");
         return;
       }
     }
@@ -167,192 +186,249 @@ const TypeWriter: FC<Props> = ({ refresh, set_Refresh }) => {
   //====================================================================
 
   function onKeyDown2(e: React.KeyboardEvent<HTMLDivElement>) {
-    data.current.totalNumberOfInputs++;
-    isDeleting.current = false;
-
-    //Check if keyboard Input is equal to a letter ---------------------------------
     if (
-      wordArr[wordIndex2.current].letters[letterIndex2.current] &&
-      wordArr[wordIndex2.current].letters[letterIndex2.current].letter === e.key
-    ) {
-      //Update Stats values
-      data.current.numberOfCorrectInputs++;
-
-      //Check if We are at the START of the sentence =========
-      if (wordIndex2.current === 0 && letterIndex2.current === 0) {
-        set_isActive(true);
-        initialTime.current = new Date().getTime();
-      }
-      //Check if We are at the END of the sentence =========
-      if (
-        wordIndex2.current === wordArr.length - 1 &&
-        letterIndex2.current === wordArr[wordArr.length - 1].letters.length - 1
-      ) {
-        finalTime.current = new Date().getTime();
-        set_isActive(false);
-      }
-
-      //Update Object values
-      const temp = [...wordArr];
-      temp[wordIndex2.current].letters[letterIndex2.current].wasVisited = true;
-      set_wordArr([...temp]);
-      letterIndex2.current++;
-      //Update GUI values
-      active_letter_indx.current.letter_idx++;
-      return;
-    }
-
-    //We are at the end of a Word ---------------------------------
-    if (e.code === "Space" && letterIndex2.current > 0) {
-      // if (wordIndex2.current === wordArr.length - 1) {
-      //   return;
-      // }
-
-      // wordArr[wordIndex2.current].letters.every((letter) => {
-      //   if (letter.incorrect || !letter.wasVisited) {
-      //     let temp = [...wordArr];
-      //     temp[wordIndex2.current].isBugged = true;
-      //     set_wordArr([...temp]);
-      //     return false;
-      //   }
-      //   return true;
-      // });
-
-      console.log("BEFORE: ");
-      console.log(`CURRENT WORD INDEX: ${wordIndex2.current}`);
       container.current &&
-        console.log(container.current.children[wordIndex2.current]);
-      // console.log(
-      //   `LENGTH TO BE COMPARED: ${lineWidth.current + nextWordWidth}`
-      // );
-      console.log("======");
-      if (container.current) {
+      (e.code === "Backspace" || e.code === "Space" || e.key.length <= 1)
+    ) {
+      if (e.code !== "Backspace") data.current.totalNumberOfInputs++;
+      isDeleting.current = false;
+
+      //Check if keyboard Input is equal to a letter ---------------------------------
+      if (
+        wordArr[wordIndex2.current].letters[letterIndex2.current] &&
+        wordArr[wordIndex2.current].letters[letterIndex2.current].letter ===
+          e.key
+      ) {
+        //Check if We are at the START of the sentence =========
+        if (wordIndex2.current === 0 && letterIndex2.current === 0) {
+          set_isActive(true);
+          initialTime.current = new Date().getTime();
+        }
+        //Check if We are at the END of the sentence =========
+        if (
+          wordIndex2.current === wordArr.length - 1 &&
+          letterIndex2.current ===
+            wordArr[wordArr.length - 1].letters.length - 1
+        ) {
+          finalTime.current = new Date().getTime();
+          set_isActive(false);
+        }
+
+        //Update Stats values
+        data.current.numberOfCorrectInputs++;
+
+        //Update Object values
+        const temp = [...wordArr];
+        temp[wordIndex2.current].letters[letterIndex2.current].wasVisited =
+          true;
+        set_wordArr([...temp]);
+        letterIndex2.current++;
+
+        //Update GUI values
+        active_letter_indx.current.letter_idx++;
+        return;
+      }
+
+      //We are at the end of a Word ---------------------------------
+      if (e.code === "Space" && letterIndex2.current > 0) {
+        if (wordIndex2.current === wordArr.length - 1) {
+          return;
+        }
+        let error = false;
+        //Check if there are any errors in a Word
+        wordArr[wordIndex2.current].letters.every((letter) => {
+          if (letter.incorrect || !letter.wasVisited) {
+            data.current.numberOfIncorrectInputs++;
+            error = true;
+            let temp = [...wordArr];
+            temp[wordIndex2.current].isBugged = true;
+            set_wordArr([...temp]);
+            return false;
+          }
+          return true;
+        });
+
         const temp: HTMLScriptElement = container.current.children[
           wordIndex2.current
         ] as HTMLScriptElement;
         handleEndOfLine(temp);
+
+        //Handle end of line -----
+        //Arr Manipulation Values
+        lineWordCount.current++;
+        wordIndex2.current++;
+        letterIndex2.current = 0;
+        set_currentWord(wordArr[wordIndex2.current]);
+
+        //Update Stats values
+        if (!error) data.current.numberOfCorrectInputs++;
+
+        //GUI
+        active_letter_indx.current.word_idx++;
+        active_letter_indx.current.letter_idx = 0;
+
+        return;
       }
-      //Handle end of line
-      // container.current &&
 
-      //Arr Manipulation Values
-      lineWordCount.current++;
-      wordIndex2.current++;
-      letterIndex2.current = 0;
-      set_currentWord(wordArr[wordIndex2.current]);
+      //Input is BACKSPACE ---------------------------------
+      if (e.code === "Backspace") {
+        if (wordIndex2.current === 0 && letterIndex2.current === 0) return;
+        //Next BACKSPACE leads to previous WORD
+        if (letterIndex2.current === 0 && wordIndex2.current > 0) {
+          //Update Word Index
+          wordIndex2.current--;
+          active_letter_indx.current.word_idx--;
+          //Update Word Status
+          let temp = [...wordArr];
+          temp[wordIndex2.current].isBugged = false;
+          set_wordArr(temp);
+          //Update Letter Index
+          let newIndex: number;
 
-      //Update Stats values
-      data.current.numberOfCorrectInputs++;
+          wordArr[wordIndex2.current].letters.every((letter) => {
+            if (!letter.wasVisited) {
+              data.current.numberOfIncorrectInputs--;
+              newIndex = letter.id;
+              active_letter_indx.current.letter_idx = newIndex;
+              letterIndex2.current = newIndex;
+              return false;
+            }
+            active_letter_indx.current.letter_idx =
+              wordArr[wordIndex2.current].letters.length;
 
-      //GUI
-      active_letter_indx.current.word_idx++;
-      active_letter_indx.current.letter_idx = 0;
+            letterIndex2.current = wordArr[wordIndex2.current].letters.length;
+            return true;
+          });
 
-      // Console.log
-      console.log("AFTER: ");
-      console.log(`LINE NUMBER: ${lineNum.current}`);
-      console.log(`LINE WIDTH: ${lineWidth.current}`);
-      console.log(`WORD COUNT: ${lineWordCount.current}`);
-      console.log(`CURRENT WORD INDEX: ${wordIndex2.current}`);
-      console.log(`LAST WORD INDEX: ${lastWordIdx.current}`);
+          //Update necessary GUI values
+          lineWordCount.current--;
 
-      container.current &&
-        console.log(
-          parseInt(
-            window.getComputedStyle(container.current).getPropertyValue("width")
-          )
-        );
+          //Update Line Width
+          const word = container.current.children[
+            wordIndex2.current
+          ] as HTMLElement;
+          lineWidth.current -= word.offsetWidth + 8;
 
-      return;
+          //Update word Arr
+          set_currentWord(wordArr[wordIndex2.current - 1]);
+          isDeleting.current = true;
+          return;
+        }
+
+        //In word BACKSPACE =====
+        const temp = [...wordArr];
+        if (
+          temp[wordIndex2.current].letters[letterIndex2.current - 1].wasAdded
+        ) {
+          temp[wordIndex2.current].letters.pop();
+        } else {
+          if (
+            temp[wordIndex2.current].letters[letterIndex2.current - 1].incorrect
+          ) {
+            data.current.numberOfIncorrectInputs--;
+          }
+          temp[wordIndex2.current].isBugged = false;
+          temp[wordIndex2.current].letters[
+            letterIndex2.current - 1
+          ].wasVisited = false;
+          temp[wordIndex2.current].letters[letterIndex2.current - 1].incorrect =
+            false;
+        }
+        //Stats
+        //Values
+        letterIndex2.current--;
+        active_letter_indx.current.letter_idx--;
+        isDeleting.current = true;
+        set_wordArr([...temp]);
+        return;
+      }
+
+      // If input does not Match letter ---------------------------------
+      if (letterIndex2.current !== wordArr[wordIndex2.current].letters.length) {
+        data.current.numberOfIncorrectInputs++;
+        let temp = [...wordArr];
+        temp[wordIndex2.current].letters[letterIndex2.current].incorrect = true;
+        temp[wordIndex2.current].letters[letterIndex2.current].wasVisited =
+          true;
+        set_wordArr([...temp]);
+        letterIndex2.current++;
+        active_letter_indx.current.letter_idx++;
+        return;
+      }
+
+      // Adding Incorrect values to a WORD --------------------------
+      if (e.key.length <= 1) {
+        //Stats
+        data.current.numberOfIncorrectInputs++;
+        //Values
+        const temp = [...wordArr];
+        const newLetter = new Letter(e.key, letterIndex2.current);
+        newLetter.incorrect = true;
+        newLetter.wasVisited = true;
+        newLetter.wasAdded = true;
+        temp[wordIndex2.current].letters.push(newLetter);
+        set_wordArr([...temp]);
+        letterIndex2.current++;
+        active_letter_indx.current.letter_idx++;
+        return;
+      }
     }
-
-    //Input is BACKSPACE ---------------------------------
-    // if (e.code === "Backspace") {
-    //   if (letterIndex2.current === 0 && wordIndex2.current > 0) {
-    //     active_letter_indx.current.letter_idx =
-    //       wordArr[wordIndex2.current - 1].letters.length;
-    //     letterIndex2.current = wordArr[wordIndex2.current - 1].letters.length;
-
-    //     active_letter_indx.current.word_idx--;
-    //     wordIndex2.current--;
-
-    //     if (container.current) {
-    //       const word = container.current.children[wordIndex2.current];
-    //       window.getComputedStyle(word).getPropertyValue("width");
-    //       lineWidth.current -= parseInt(
-    //         window.getComputedStyle(word).getPropertyValue("width")
-    //       );
-    //     }
-
-    //     //==================
-    //     set_currentWord(wordArr[wordIndex2.current - 1]);
-    //     isDeleting.current = true;
-    //     return;
-    //     // Index should be + 1 but out of bounce
-    //   }
-
-    //   const temp = wordArr;
-    //   temp[wordIndex2.current].isBugged = false;
-    //   temp[wordIndex2.current].letters[letterIndex2.current - 1].wasVisited =
-    //     false;
-    //   temp[wordIndex2.current].letters[letterIndex2.current - 1].incorrect =
-    //     false;
-    //   letterIndex2.current--;
-    //   active_letter_indx.current.letter_idx--;
-    //   isDeleting.current = true;
-    //   set_wordArr([...temp]);
-    //   console.log(active_letter_indx.current);
-    //   return;
-    // }
-
-    //If input does not Match letter ---------------------------------
-    //   if (
-    //     e.key.length <= 1 &&
-    //     letterIndex2.current <= wordArr[wordIndex2.current].letters.length - 1
-    //   ) {
-    //     data.current.numberOfIncorrectInputs++;
-    //     let temp = [...wordArr];
-    //     temp[wordIndex2.current].letters[letterIndex2.current].incorrect = true;
-    //     set_wordArr([...temp]);
-    //     letterIndex2.current++;
-    //     active_letter_indx.current.letter_idx++;
-    //   }
   }
 
   //====================================================================
-  const initialTime = useRef(0);
-  const finalTime = useRef(0);
-  const currentTime = useRef(0);
-  const [isActive, set_isActive] = useState(false);
-  const data = useRef<Data>({
-    numberOfCorrectInputs: 0,
-    numberOfIncorrectInputs: 0,
-    totalNumberOfInputs: 0,
-    raw_wpm_Arr: [],
-    wpm_Arr: [],
-    accuracy: 0,
-  });
 
-  //====================================================================
   useEffect(() => {
     let interval: NodeJS.Timer;
+
     if (isActive) {
+      let count = 1;
       interval = setInterval(() => {
+        //Calculate Raw WPM
         const WPM = calculateWPM(
           data.current.totalNumberOfInputs,
           (new Date().getTime() - initialTime.current) / 1000 / 60
         );
         data.current.raw_wpm_Arr.push(WPM);
+        //Calculate Net WPM
+        const netWPM =
+          (data.current.totalNumberOfInputs / 5 -
+            data.current.numberOfIncorrectInputs) /
+          ((new Date().getTime() - initialTime.current) / 1000 / 60);
+        data.current.wpm_Arr.push(netWPM);
+        //Label
+        data.current.labels.push(count);
+        count++;
       }, 1000);
 
       return () => {
+        //Last Raw WPM
         const WPM = calculateWPM(
           data.current.totalNumberOfInputs,
           (finalTime.current - initialTime.current) / 1000 / 60
         );
         data.current.raw_wpm_Arr.push(WPM);
-        // console.log(data.current);
-        // console.log(((finalTime.current - initialTime.current) / 1000) % 60);
+        //Last Net WPM
+        const netWPM =
+          (data.current.totalNumberOfInputs / 5 -
+            data.current.numberOfIncorrectInputs) /
+          ((finalTime.current - initialTime.current) / 1000 / 60);
+        data.current.wpm_Arr.push(netWPM);
+
+        //Total Time
+        data.current.totalTime =
+          ((finalTime.current - initialTime.current) / 1000) % 60;
+
+        //Accuracy
+        data.current.accuracy =
+          (data.current.numberOfCorrectInputs /
+            data.current.totalNumberOfInputs) *
+          100;
+
+        //Label
+        data.current.labels.push(data.current.totalTime);
+
+        //
+        set_Data(data.current);
         clearInterval(interval);
       };
     }

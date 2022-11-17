@@ -3,12 +3,15 @@ import "./App.css";
 //Components
 import TypeWriter from "./Components/TypeWriter/TypeWriter";
 import Header from "./Components/Header/Header";
-//Icons
+import Graph from "./Components/TypeWriter/Graph/Graph";
 // import refresh from "./Icons/refresh.svg";
 import { ReactComponent as Refresh } from "./Icons/rotate-cw.svg";
+//Types
+import { Data, createEmptyData } from "./Components/TypeWriter/TypeWriter";
 
 function App() {
   const [refresh, set_Refresh] = React.useState(false);
+  const [data, set_Data] = React.useState(createEmptyData());
 
   return (
     <div className="App">
@@ -17,7 +20,11 @@ function App() {
           <Header />
         </div>
         <div className="subContainer2">
-          <TypeWriter refresh={refresh} set_Refresh={set_Refresh} />
+          <TypeWriter
+            refresh={refresh}
+            set_Refresh={set_Refresh}
+            set_Data={set_Data}
+          />
           <div
             className="refresh-icon"
             tabIndex={0}
@@ -28,7 +35,9 @@ function App() {
           >
             <Refresh />
           </div>
-          <div className="subContainer3"></div>
+          <div className="subContainer3">
+            <Graph data={data} />
+          </div>
         </div>
       </div>
     </div>
