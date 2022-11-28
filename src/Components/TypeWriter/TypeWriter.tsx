@@ -3,10 +3,7 @@ import { useState, useRef, useEffect, FC } from "react";
 import "./styles.css";
 
 import Word from "../../Classes/Word";
-import { sentenceToWordArr } from "../../Methods/TypeWriter/TypeWriter";
 
-//API
-import { getShortStory } from "../../API/Documents";
 //Components
 import { Word as WordContainer } from "./Word/Word";
 
@@ -18,8 +15,11 @@ export type Data = {
   labels: Array<number>;
   wpm_Arr: Array<number>;
   raw_wpm_Arr: Array<number>;
+  err_Arr: Array<{ x: number; y: number }>;
   numberOfCorrectInputs: number;
   numberOfIncorrectInputs: number;
+  numberOfExtraInputs: number;
+  numberOfMissedInputs: number;
   totalNumberOfInputs: number;
   totalTime: number;
   accuracy: number;
@@ -33,8 +33,11 @@ export function createEmptyData() {
     totalNumberOfInputs: 0,
     raw_wpm_Arr: [],
     wpm_Arr: [],
+    err_Arr: [],
     accuracy: 0,
     totalTime: 0,
+    numberOfExtraInputs: 0,
+    numberOfMissedInputs: 0,
   };
   return data;
 }
@@ -43,14 +46,26 @@ export function createEmptyData() {
 
 interface Props {
   refresh: boolean;
+  content: Word[];
   set_Refresh: React.Dispatch<React.SetStateAction<boolean>>;
   set_Data: React.Dispatch<React.SetStateAction<Data>>;
+  set_focus: React.Dispatch<React.SetStateAction<boolean>>;
+  focus: boolean;
+  set_testIsFinished: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const text =
-  "better known by his pen name and, later, legal name Pablo Neruda, was a Chilean poet-diplomat and politician who won the 1971 Nobel Prize in Literature.";
+// const text =
+//   "better known by his pen name and, later, legal name Pablo Neruda, was a Chilean poet-diplomat and politician who won the 1971 Nobel Prize in Literature.";
 
-const TypeWriter: FC<Props> = ({ refresh, set_Refresh, set_Data }) => {
+const TypeWriter: FC<Props> = ({
+  refresh,
+  set_Refresh,
+  set_Data,
+  content,
+  focus,
+  set_focus,
+  set_testIsFinished,
+}) => {
   //Text
   const [wordArr, set_wordArr] = useState<Word[]>([]);
   //Containers
@@ -64,6 +79,7 @@ const TypeWriter: FC<Props> = ({ refresh, set_Refresh, set_Data }) => {
   const lastWordIdx = useRef(0);
   const active_letter_indx = useRef({ word_idx: 0, letter_idx: 0 });
   const [isFocused, set_isFocused] = useState(true);
+  const [capsIsOn, set_capsIsOn] = useState(false);
   //Typing Data values
   const [currentWord, set_currentWord] = useState<Word>();
   const isDeleting = useRef(false);
@@ -74,71 +90,48 @@ const TypeWriter: FC<Props> = ({ refresh, set_Refresh, set_Data }) => {
   const data = useRef<Data>(createEmptyData());
 
   //====================================================================
-  function enableFocus(e: KeyboardEvent) {
-    if (e.key === "Tab") return;
-    set_isFocused(true);
+  function resetValues() {
+    initialTime.current = 0;
+    finalTime.current = 0;
+    lineWidth.current = 0;
+    lineWordCount.current = 0;
+    lineNum.current = 0;
+    letterIndex2.current = 0;
+    wordIndex2.current = 0;
+    lastWordIdx.current = 0;
+    active_letter_indx.current = { word_idx: 0, letter_idx: 0 };
+    data.current = createEmptyData();
+    set_isActive(false);
   }
 
   //====================================================================
+  function enableFocus() {
+    container.current !== document.activeElement && container.current?.focus();
+  }
   const focusContainer = React.useCallback(() => {
-    document.body.onkeyup = (e) => enableFocus(e);
+    document.body.onkeyup = (e) => {
+      if (e.key === "Tab") return;
+      set_isFocused(true);
+    };
   }, []);
 
   //====================================================================
   //Handle Focus
   useEffect(() => {
     focusContainer();
-    if (refresh) {
-      set_wordArr(sentenceToWordArr(text));
-      initialTime.current = 0;
-      finalTime.current = 0;
-      set_isActive(false);
-      data.current = createEmptyData();
-      lineWidth.current = 0;
-      lineWordCount.current = 0;
-      lineNum.current = 0;
-      letterIndex2.current = 0;
-      wordIndex2.current = 0;
-      lastWordIdx.current = 0;
-      active_letter_indx.current = { word_idx: 0, letter_idx: 0 };
-      container.current !== document.activeElement &&
-        container.current?.focus();
-      //Reset Stats
-
-      set_isFocused(true);
-      set_Refresh(false);
+    if (isFocused) {
+      set_focus(true);
+      enableFocus();
     }
-  }, [refresh, set_Refresh, focusContainer]);
-
-  useEffect(() => {
-    if (isFocused)
-      container.current !== document.activeElement &&
-        container.current?.focus();
-  }, [isFocused]);
+  }, [isFocused, focusContainer, set_focus]);
 
   //====================================================================
-  //Fetch and build Sentence
+  //Update Word on Content Change
   useEffect(() => {
-    const abort = new AbortController();
-    // async function fetch() {
-    //   const data = await getShortStory(abort.signal);
-    //   const text = sentenceToWordArr(data.story);
-
-    //   set_wordArr(text);
-    // }
-
-    set_wordArr(sentenceToWordArr(text));
-    // fetch();
-
-    function onRefresh() {
-      set_wordArr([]);
-      lineWidth.current = 0;
-    }
-    return () => {
-      abort.abort();
-      onRefresh();
-    };
-  }, []);
+    set_wordArr(content);
+    set_isFocused(true);
+    resetValues();
+  }, [content]);
 
   //====================================================================
 
@@ -239,6 +232,8 @@ const TypeWriter: FC<Props> = ({ refresh, set_Refresh, set_Data }) => {
         wordArr[wordIndex2.current].letters.every((letter) => {
           if (letter.incorrect || !letter.wasVisited) {
             data.current.numberOfIncorrectInputs++;
+            data.current.numberOfMissedInputs +=
+              wordArr[wordIndex2.current].letters.length - letter.id;
             error = true;
             let temp = [...wordArr];
             temp[wordIndex2.current].isBugged = true;
@@ -287,8 +282,10 @@ const TypeWriter: FC<Props> = ({ refresh, set_Refresh, set_Data }) => {
 
           wordArr[wordIndex2.current].letters.every((letter) => {
             if (!letter.wasVisited) {
-              data.current.numberOfIncorrectInputs--;
               newIndex = letter.id;
+              data.current.numberOfIncorrectInputs--;
+              data.current.numberOfMissedInputs -=
+                wordArr[wordIndex2.current].letters.length - 1 - (newIndex - 1);
               active_letter_indx.current.letter_idx = newIndex;
               letterIndex2.current = newIndex;
               return false;
@@ -320,6 +317,7 @@ const TypeWriter: FC<Props> = ({ refresh, set_Refresh, set_Data }) => {
         if (
           temp[wordIndex2.current].letters[letterIndex2.current - 1].wasAdded
         ) {
+          data.current.numberOfExtraInputs--;
           temp[wordIndex2.current].letters.pop();
         } else {
           if (
@@ -346,6 +344,7 @@ const TypeWriter: FC<Props> = ({ refresh, set_Refresh, set_Data }) => {
       // If input does not Match letter ---------------------------------
       if (letterIndex2.current !== wordArr[wordIndex2.current].letters.length) {
         data.current.numberOfIncorrectInputs++;
+
         let temp = [...wordArr];
         temp[wordIndex2.current].letters[letterIndex2.current].incorrect = true;
         temp[wordIndex2.current].letters[letterIndex2.current].wasVisited =
@@ -356,10 +355,11 @@ const TypeWriter: FC<Props> = ({ refresh, set_Refresh, set_Data }) => {
         return;
       }
 
-      // Adding Incorrect values to a WORD --------------------------
+      // Adding Incorrect values to a WORD (Extra Inputs) --------------------------
       if (e.key.length <= 1) {
         //Stats
         data.current.numberOfIncorrectInputs++;
+        data.current.numberOfExtraInputs++;
         //Values
         const temp = [...wordArr];
         const newLetter = new Letter(e.key, letterIndex2.current);
@@ -373,6 +373,12 @@ const TypeWriter: FC<Props> = ({ refresh, set_Refresh, set_Data }) => {
         return;
       }
     }
+
+    if (e.getModifierState("CapsLock")) {
+      set_capsIsOn(true);
+    } else {
+      set_capsIsOn(false);
+    }
   }
 
   //====================================================================
@@ -381,22 +387,45 @@ const TypeWriter: FC<Props> = ({ refresh, set_Refresh, set_Data }) => {
     let interval: NodeJS.Timer;
 
     if (isActive) {
+      let errorNum = 0;
       let count = 1;
       interval = setInterval(() => {
+        console.log(count);
         //Calculate Raw WPM
         const WPM = calculateWPM(
           data.current.totalNumberOfInputs,
           (new Date().getTime() - initialTime.current) / 1000 / 60
         );
         data.current.raw_wpm_Arr.push(WPM);
+
         //Calculate Net WPM
-        const netWPM =
-          (data.current.totalNumberOfInputs / 5 -
-            data.current.numberOfIncorrectInputs) /
-          ((new Date().getTime() - initialTime.current) / 1000 / 60);
+        const netWPM = calculateWPM(
+          data.current.numberOfCorrectInputs,
+          (new Date().getTime() - initialTime.current) / 1000 / 60
+        );
         data.current.wpm_Arr.push(netWPM);
+
         //Label
         data.current.labels.push(count);
+
+        //Errors
+        if (
+          data.current.totalNumberOfInputs -
+            data.current.numberOfCorrectInputs >
+          errorNum
+        ) {
+          let error = {
+            y:
+              data.current.totalNumberOfInputs -
+              data.current.numberOfCorrectInputs -
+              errorNum,
+            x: count,
+          };
+          data.current.err_Arr.push(error);
+          errorNum =
+            data.current.totalNumberOfInputs -
+            data.current.numberOfCorrectInputs;
+        }
         count++;
       }, 1000);
 
@@ -406,62 +435,91 @@ const TypeWriter: FC<Props> = ({ refresh, set_Refresh, set_Data }) => {
           data.current.totalNumberOfInputs,
           (finalTime.current - initialTime.current) / 1000 / 60
         );
-        data.current.raw_wpm_Arr.push(WPM);
-        //Last Net WPM
-        const netWPM =
-          (data.current.totalNumberOfInputs / 5 -
-            data.current.numberOfIncorrectInputs) /
-          ((finalTime.current - initialTime.current) / 1000 / 60);
-        data.current.wpm_Arr.push(netWPM);
+        if (WPM > 0) {
+          wordIndex2.current++;
 
-        //Total Time
-        data.current.totalTime =
-          ((finalTime.current - initialTime.current) / 1000) % 60;
+          data.current.raw_wpm_Arr.push(WPM);
+          //Last Net WPM
+          const netWPM =
+            (data.current.totalNumberOfInputs / 5 -
+              data.current.numberOfIncorrectInputs) /
+            ((finalTime.current - initialTime.current) / 1000 / 60);
+          data.current.wpm_Arr.push(netWPM);
 
-        //Accuracy
-        data.current.accuracy =
-          (data.current.numberOfCorrectInputs /
-            data.current.totalNumberOfInputs) *
-          100;
+          //Total Time
+          data.current.totalTime =
+            ((finalTime.current - initialTime.current) / 1000) % 60;
 
-        //Label
-        data.current.labels.push(data.current.totalTime);
+          //Accuracy
 
-        //
-        set_Data(data.current);
-        clearInterval(interval);
+          const number: number =
+            data.current.numberOfCorrectInputs /
+            data.current.totalNumberOfInputs;
+          data.current.accuracy =
+            Math.round((number + Number.EPSILON) * 10000) / 10000;
+
+          //Label
+          data.current.labels.push(data.current.totalTime);
+          //
+
+          set_Data(data.current);
+          clearInterval(interval);
+          set_testIsFinished(true);
+        } else {
+          clearInterval(interval);
+        }
       };
     }
-  }, [isActive]);
+  }, [isActive, set_Data, set_testIsFinished]);
 
   //====================================================================
   return (
-    <div className="TypeWriter-container">
-      <div
-        className={`writeContainer ${!isFocused && "onBlur"}`}
-        id={"writeContainer"}
-        ref={container}
-        tabIndex={0}
-        onKeyDown={(e) => onKeyDown2(e)}
-        onBlur={(e) => set_isFocused(false)}
-      >
-        {wordArr.map((word) => {
-          return (
-            <WordContainer
-              key={word.idx}
-              word={word}
-              active_letter_indx={active_letter_indx.current}
-              isDeleting={isDeleting.current}
-            />
-          );
-        })}
-      </div>
-      {!isFocused && (
-        <div className="outOfFocusMessage" onClick={(e) => set_isFocused(true)}>
-          Click or press any key to Focus
+    <>
+      <div className="extraData">
+        <div
+          className={`wordIndex`}
+        >{`${wordIndex2.current}  / ${wordArr.length}`}</div>
+        <div className={`capsContainer`}>
+          <div className={`capsLock ${capsIsOn ? "true" : ""}`}>caps lock</div>
         </div>
-      )}
-    </div>
+      </div>
+      <div className="TypeWriter-container">
+        <div
+          className={`writeContainer ${!focus && "onBlur"}`}
+          id={"writeContainer"}
+          ref={container}
+          tabIndex={0}
+          onKeyDown={(e) => onKeyDown2(e)}
+          onBlur={(e) => {
+            set_isFocused(false);
+          }}
+        >
+          {wordArr.map((word) => {
+            return (
+              <WordContainer
+                key={word.idx}
+                word={word}
+                active_letter_indx={active_letter_indx.current}
+                isDeleting={isDeleting.current}
+              />
+            );
+          })}
+        </div>
+        {!focus && (
+          <div
+            className="outOfFocusMessage"
+            id={`outOfFocusMessage`}
+            tabIndex={0}
+            onClick={(e) => {
+              set_isFocused(true);
+              set_focus(true);
+            }}
+          >
+            Click or press any key to Focus
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 

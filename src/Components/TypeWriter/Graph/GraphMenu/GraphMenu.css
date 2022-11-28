@@ -1,0 +1,75 @@
+.graphMenu-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.graphMenu-menuItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  color: var(--color-3);
+  width: fit-content;
+  /* outline: 1px solid red; */
+  border-radius: 5px;
+  padding: 0.8rem 1.5rem;
+}
+
+.graphMenu-menuItem:focus {
+  color: var(--color-3);
+  background-color: var(--color-2);
+  border: none;
+  outline: none;
+}
+.graphMenu-menuItem:focus:hover {
+  color: var(--color-3);
+}
+
+.graphMenu-menuItem:hover {
+  color: var(--color-2);
+}
+
+.graphMenu-menuItem:after {
+  position: absolute;
+  content: attr(hover-data);
+  background-color: hsla(0, 0%, 6%, 0.95);
+  color: var(--color-2);
+  padding: 0.5rem 0.75rem;
+  border-radius: 5px;
+  white-space: nowrap;
+  font-size: 1rem;
+  line-height: 1rem;
+  transition: opacity 100ms ease-in-out;
+  left: 50%;
+  bottom: -1.5rem;
+  transform: translate(-50%, 50%);
+  opacity: 0;
+  visibility: hidden;
+}
+
+.graphMenu-menuItem::before {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: hsla(0, 0%, 6%, 0.95);
+  transition: opacity 100ms ease-in-out;
+  transform: rotate(45deg) translateX(-50%) translateY(50%);
+  left: 50%;
+  bottom: -0.9rem;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.graphMenu-menuItem:hover:before {
+  opacity: 1;
+  visibility: visible;
+}
+.graphMenu-menuItem:hover:after {
+  opacity: 1;
+  visibility: visible;
+}

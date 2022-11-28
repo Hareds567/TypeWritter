@@ -1,11 +1,14 @@
 .TypeWriter-container {
+  display: flex;
   position: relative;
+  align-items: flex-start;
   height: 7em;
+  width: 100%;
+  /* outline: 1px solid green; */
 }
 
 .writeContainer {
   display: flex;
-  box-sizing: border-box;
   position: relative;
   align-items: center;
   border-radius: 0;
@@ -121,4 +124,38 @@
     /* opacity: 1; */
     right: 0;
   }
+}
+
+.extraData {
+  display: grid;
+  grid-template-columns: 4rem auto;
+  width: 100%;
+  padding: 0;
+  margin-bottom: 1.5rem;
+  line-height: 1rem;
+  font-size: 1rem;
+}
+.wordIndex {
+  color: var(--color-4);
+  justify-self: start;
+}
+.capsContainer {
+  width: 100%;
+  justify-self: end;
+  align-self: end;
+  /* outline: 1px solid red; */
+}
+.capsLock {
+  cursor: default;
+  width: fit-content;
+  background-color: var(--color-4);
+  color: var(--color-3);
+  border-radius: 3px;
+  font-weight: 600;
+  padding: 0.2rem 0.2rem;
+  opacity: 0;
+}
+
+.true {
+  opacity: 1;
 }

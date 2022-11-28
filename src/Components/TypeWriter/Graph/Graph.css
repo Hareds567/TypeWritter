@@ -1,0 +1,128 @@
+.chart-container {
+  display: grid;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 2rem;
+  margin: 15rem 0;
+}
+.chart-container-subContainer1 {
+  display: grid;
+  grid-template-areas:
+    "stats graph"
+    "moreStats moreStats";
+  grid-template-columns: 10% 90%;
+  grid-template-rows: 200px;
+  gap: 1rem;
+  width: 100%;
+}
+.chart {
+  max-height: 200px;
+}
+.stats {
+  grid-area: stats;
+}
+.moreStats {
+  grid-area: moreStats;
+  display: grid;
+  column-gap: 2rem;
+  grid-auto-flow: column;
+  grid-template-areas: none;
+  justify-content: space-between;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+.stat2 {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  cursor: default;
+}
+
+.chart-container .h1 {
+  font-size: 2rem;
+  color: var(--color-3);
+  cursor: default;
+}
+.chart-container .c1 {
+  position: relative;
+  line-height: 3rem;
+  font-size: 4rem;
+  height: fit-content;
+  color: var(--color-4);
+  cursor: pointer;
+}
+.chart-container .h2 {
+  font-size: 1rem;
+  color: var(--color-3);
+  cursor: default;
+}
+
+.chart-container .c2 {
+  position: relative;
+  font-size: 2rem;
+  color: var(--color-4);
+  /* cursor: pointer; */
+}
+.stat > .c2 {
+  cursor: pointer;
+}
+
+.stat > :nth-child(2)::before {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: hsla(0, 0%, 6%, 0.95);
+  transform: rotate(45deg);
+  transition: opacity 100ms ease-in-out;
+
+  bottom: 110%;
+  left: 50%;
+  opacity: 0;
+  visibility: none;
+}
+.stat > :nth-child(2):hover:before {
+  opacity: 1;
+  visibility: visible;
+}
+
+.stat > :nth-child(2)::after {
+  pointer-events: none;
+  content: attr(data-hover);
+  height: fit-content;
+  width: fit-content;
+  background-color: hsla(0, 0%, 6%, 0.95);
+  color: var(--color-2);
+  padding: 5px 0;
+  transition: opacity 100ms ease-in-out;
+  font-size: 1rem;
+  line-height: 1rem;
+  text-align: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 5px;
+  white-space: nowrap;
+  margin-bottom: 10px;
+  transform-origin: top;
+  position: absolute;
+  left: 50%;
+  top: -40px;
+  transform: translateX(-50%);
+  opacity: 0;
+  visibility: none;
+}
+
+.stat > :nth-child(2):hover:after {
+  opacity: 1;
+  visibility: visible;
+}
+
+.stat2 > .c2 {
+  font-size: 1rem;
+}

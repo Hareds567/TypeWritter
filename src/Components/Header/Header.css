@@ -1,6 +1,8 @@
 .header {
   display: flex;
   padding: 1rem 0;
+  align-self: start;
+  padding: 1.5rem 0rem;
 }
 .title {
   font: 400;

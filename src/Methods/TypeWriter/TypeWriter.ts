@@ -1,8 +1,13 @@
 import Word from "../../Classes/Word";
+import textArr from "../../Texts/Texts";
 
-export function sentenceToArray(sentence: string) {
+function sentenceToArray(sentence: string) {
   const arr = sentence.split(" ");
   return arr;
+}
+
+function getTextByType(type: number) {
+  return textArr.filter((text) => text.type === type);
 }
 
 export function sentenceToWordArr(sentence: string) {
@@ -13,4 +18,17 @@ export function sentenceToWordArr(sentence: string) {
     wordArr.push(temp);
   });
   return wordArr;
+}
+
+export function getRandomText() {
+  const randomIndex = Math.floor(Math.random() * textArr.length);
+  const sentence = sentenceToWordArr(textArr[randomIndex].content);
+  return { sentence, obj: textArr[randomIndex] };
+}
+
+export function getRandomTextByType(type: number) {
+  const textArr = getTextByType(type);
+  const randomIndex = Math.floor(Math.random() * textArr.length);
+  const sentence = sentenceToWordArr(textArr[randomIndex].content);
+  return { sentence, obj: textArr[randomIndex] };
 }
