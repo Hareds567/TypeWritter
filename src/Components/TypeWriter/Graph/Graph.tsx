@@ -1,7 +1,7 @@
 import React, { SetStateAction } from "react";
 //Chart
 import Chart, { ChartItem, ChartData } from "chart.js/auto";
-import { Data } from "../../../Components/TypeWriter/TypeWriter";
+import { Data, PostData } from "../../../Components/TypeWriter/TypeWriter";
 //css
 import "./Graph.css";
 //Icons
@@ -12,14 +12,18 @@ import { Text } from "../../../Texts/Texts";
 import GraphMenu from "./GraphMenu/GraphMenu";
 import MoreStats from "./MoreStats/MoreStats";
 import Stats from "./Stats/Stats";
-
+import Replay from "./Replay/Replay";
+//
+import { Word } from "../../../Classes/Word";
 interface Props {
   data: Data;
   obj: Text;
   nextText: any;
   repeatTest: any;
+  content: Word[];
   getTestType: () => string;
   set_currenLocation: React.Dispatch<SetStateAction<number>>;
+  postData: PostData;
 }
 
 const Graph: React.FC<Props> = ({
@@ -29,6 +33,8 @@ const Graph: React.FC<Props> = ({
   repeatTest,
   getTestType,
   set_currenLocation,
+  content,
+  postData,
 }) => {
   const chartDiv = React.useRef<HTMLCanvasElement>(null);
 
@@ -140,6 +146,9 @@ const Graph: React.FC<Props> = ({
           repeatText={repeatTest}
           set_currenLocation={set_currenLocation}
         />
+      </div>
+      <div className="replay">
+        <Replay postData={postData} content={obj.content} />
       </div>
     </div>
   );

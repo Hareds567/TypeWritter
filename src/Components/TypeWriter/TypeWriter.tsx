@@ -25,6 +25,25 @@ export type Data = {
   accuracy: number;
 };
 
+export enum InputType {
+  normal = 0,
+  visited = 1,
+  error = 2,
+  extra = 3,
+  erased = 4,
+  space = 5,
+  caps = 6,
+}
+export type Character = {
+  inputType: InputType;
+  character: string;
+  time: number;
+};
+export type PostData = {
+  characters: Character[];
+  initialTime: number;
+};
+
 export function createEmptyData() {
   const data: Data = {
     labels: [],
@@ -50,8 +69,9 @@ interface Props {
   set_Refresh: React.Dispatch<React.SetStateAction<boolean>>;
   set_Data: React.Dispatch<React.SetStateAction<Data>>;
   set_focus: React.Dispatch<React.SetStateAction<boolean>>;
-  focus: boolean;
   set_testIsFinished: React.Dispatch<React.SetStateAction<boolean>>;
+  set_postData: React.Dispatch<React.SetStateAction<PostData>>;
+  focus: boolean;
 }
 
 // const text =
@@ -65,6 +85,7 @@ const TypeWriter: FC<Props> = ({
   focus,
   set_focus,
   set_testIsFinished,
+  set_postData,
 }) => {
   //Text
   const [wordArr, set_wordArr] = useState<Word[]>([]);
@@ -88,6 +109,7 @@ const TypeWriter: FC<Props> = ({
   const finalTime = useRef(0);
   const [isActive, set_isActive] = useState(false);
   const data = useRef<Data>(createEmptyData());
+  const postData = useRef<PostData>({ characters: [], initialTime: 0 });
 
   //====================================================================
   function resetValues() {
@@ -179,10 +201,16 @@ const TypeWriter: FC<Props> = ({
   //====================================================================
 
   function onKeyDown2(e: React.KeyboardEvent<HTMLDivElement>) {
+    let newCharacter: Character = {
+      character: "",
+      inputType: InputType.normal,
+      time: 0,
+    };
     if (
       container.current &&
       (e.code === "Backspace" || e.code === "Space" || e.key.length <= 1)
     ) {
+      //We are at start
       if (e.code !== "Backspace") data.current.totalNumberOfInputs++;
       isDeleting.current = false;
 
@@ -192,10 +220,18 @@ const TypeWriter: FC<Props> = ({
         wordArr[wordIndex2.current].letters[letterIndex2.current].letter ===
           e.key
       ) {
+        //Update PostData character
+        newCharacter = {
+          character: e.key,
+          time: new Date().getTime(),
+          inputType: InputType.visited,
+        };
+        postData.current.characters.push(newCharacter);
         //Check if We are at the START of the sentence =========
         if (wordIndex2.current === 0 && letterIndex2.current === 0) {
           set_isActive(true);
           initialTime.current = new Date().getTime();
+          postData.current.initialTime = initialTime.current;
         }
         //Check if We are at the END of the sentence =========
         if (
@@ -228,6 +264,14 @@ const TypeWriter: FC<Props> = ({
           return;
         }
         let error = false;
+
+        //Update PostData character
+        newCharacter = {
+          character: e.key,
+          time: new Date().getTime(),
+          inputType: InputType.space,
+        };
+        postData.current.characters.push(newCharacter);
         //Check if there are any errors in a Word
         wordArr[wordIndex2.current].letters.every((letter) => {
           if (letter.incorrect || !letter.wasVisited) {
@@ -268,6 +312,13 @@ const TypeWriter: FC<Props> = ({
       //Input is BACKSPACE ---------------------------------
       if (e.code === "Backspace") {
         if (wordIndex2.current === 0 && letterIndex2.current === 0) return;
+        //Update PostData character
+        newCharacter = {
+          character: e.key,
+          time: new Date().getTime(),
+          inputType: InputType.erased,
+        };
+        postData.current.characters.push(newCharacter);
         //Next BACKSPACE leads to previous WORD
         if (letterIndex2.current === 0 && wordIndex2.current > 0) {
           //Update Word Index
@@ -279,7 +330,6 @@ const TypeWriter: FC<Props> = ({
           set_wordArr(temp);
           //Update Letter Index
           let newIndex: number;
-
           wordArr[wordIndex2.current].letters.every((letter) => {
             if (!letter.wasVisited) {
               newIndex = letter.id;
@@ -317,6 +367,7 @@ const TypeWriter: FC<Props> = ({
         if (
           temp[wordIndex2.current].letters[letterIndex2.current - 1].wasAdded
         ) {
+          //Erase extra words
           data.current.numberOfExtraInputs--;
           temp[wordIndex2.current].letters.pop();
         } else {
@@ -332,7 +383,6 @@ const TypeWriter: FC<Props> = ({
           temp[wordIndex2.current].letters[letterIndex2.current - 1].incorrect =
             false;
         }
-        //Stats
         //Values
         letterIndex2.current--;
         active_letter_indx.current.letter_idx--;
@@ -343,6 +393,14 @@ const TypeWriter: FC<Props> = ({
 
       // If input does not Match letter ---------------------------------
       if (letterIndex2.current !== wordArr[wordIndex2.current].letters.length) {
+        //Update PostData character
+        newCharacter = {
+          character: e.key,
+          time: new Date().getTime(),
+          inputType: InputType.error,
+        };
+        postData.current.characters.push(newCharacter);
+        //
         data.current.numberOfIncorrectInputs++;
 
         let temp = [...wordArr];
@@ -357,6 +415,13 @@ const TypeWriter: FC<Props> = ({
 
       // Adding Incorrect values to a WORD (Extra Inputs) --------------------------
       if (e.key.length <= 1) {
+        //Update PostData character
+        newCharacter = {
+          character: e.key,
+          time: new Date().getTime(),
+          inputType: InputType.extra,
+        };
+        postData.current.characters.push(newCharacter);
         //Stats
         data.current.numberOfIncorrectInputs++;
         data.current.numberOfExtraInputs++;
@@ -375,6 +440,12 @@ const TypeWriter: FC<Props> = ({
     }
 
     if (e.getModifierState("CapsLock")) {
+      newCharacter = {
+        character: e.key,
+        time: new Date().getTime(),
+        inputType: InputType.caps,
+      };
+      postData.current.characters.push(newCharacter);
       set_capsIsOn(true);
     } else {
       set_capsIsOn(false);
@@ -390,7 +461,6 @@ const TypeWriter: FC<Props> = ({
       let errorNum = 0;
       let count = 1;
       interval = setInterval(() => {
-        console.log(count);
         //Calculate Raw WPM
         const WPM = calculateWPM(
           data.current.totalNumberOfInputs,
@@ -429,7 +499,11 @@ const TypeWriter: FC<Props> = ({
         count++;
       }, 1000);
 
+      let tempPostData = postData.current;
       return () => {
+        //PostData
+        set_postData(tempPostData);
+        // console.log(tempPostData);
         //Last Raw WPM
         const WPM = calculateWPM(
           data.current.totalNumberOfInputs,
@@ -470,7 +544,7 @@ const TypeWriter: FC<Props> = ({
         }
       };
     }
-  }, [isActive, set_Data, set_testIsFinished]);
+  }, [isActive, set_Data, set_testIsFinished, set_postData]);
 
   //====================================================================
   return (

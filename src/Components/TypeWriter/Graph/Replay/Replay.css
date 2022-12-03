@@ -1,0 +1,44 @@
+.replay-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  /* outline: 1px solid red; */
+  height: fit-content;
+}
+
+.sentence-container {
+  position: relative;
+  display: flex;
+  font-size: 1rem;
+  line-height: 1rem;
+  gap: 0.2rem;
+}
+
+.letter-container {
+  font-size: 1rem;
+  line-height: 1rem;
+  color: var(--color-3);
+}
+
+.buttons {
+  display: grid;
+  grid-auto-flow: column;
+}
+
+.buttons-button {
+  cursor: pointer;
+  color: var(--color-3);
+}
+
+.buttons-button:hover {
+  color: var(--color-2);
+}
+.incorrect2 {
+  font-size: 1rem;
+  line-height: 1rem;
+  color: #ca4754;
+}
+.visited2 {
+  color: var(--color-2);
+}

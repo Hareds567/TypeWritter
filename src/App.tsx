@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import "./App.css";
 //Components
 import TypeWriter from "./Components/TypeWriter/TypeWriter";
@@ -8,7 +8,7 @@ import Menu from "./Components/Menu/Menu";
 //icons
 import { ReactComponent as Refresh } from "./Icons/rotate-cw.svg";
 //Types
-import { createEmptyData } from "./Components/TypeWriter/TypeWriter";
+import { createEmptyData, PostData } from "./Components/TypeWriter/TypeWriter";
 import Word from "./Classes/Word";
 //classes
 import {
@@ -17,12 +17,20 @@ import {
 } from "./Methods/TypeWriter/TypeWriter";
 import { sentenceToWordArr } from "./Methods/TypeWriter/TypeWriter";
 import { getLabel } from "./Components/Menu/Menu";
+import { length, Text } from "./Texts/Texts";
 
 function App() {
   const [refresh, set_Refresh] = React.useState(false);
   const [data, set_Data] = React.useState(createEmptyData());
-  const [content, set_content] = React.useState(getRandomText());
+  const [content, set_content] = React.useState<{
+    sentence: Word[];
+    obj: Text;
+  }>({ sentence: [], obj: { content: "", source: "", type: length.long } });
   const [focus, set_focus] = React.useState(false);
+  const [postData, set_postData] = React.useState<PostData>({
+    characters: [],
+    initialTime: 0,
+  });
   const [menu, set_menu] = React.useState<{ testType: number; mode: number }>(
     () => {
       const temp = getLabel();
@@ -30,9 +38,16 @@ function App() {
     }
   );
   const [testIsFinished, set_testIsFinished] = React.useState(false);
-
   const [currentLocation, set_currenLocation] = React.useState(0);
 
+  const [temp, set_temp] = React.useState<Word[]>([]);
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) {
+      set_temp(content.sentence);
+      first.current = false;
+    }
+  }, [content.sentence]);
   //====================================================================
   function onclick() {
     const menu = document.getElementById("menu-subContainer1");
@@ -67,10 +82,12 @@ function App() {
 
   function nextText() {
     set_testIsFinished(false);
+    first.current = true;
     set_Refresh(true);
   }
 
   function repeatText() {
+    first.current = true;
     const newSentence = sentenceToWordArr(content.obj.content);
 
     const text = { sentence: newSentence, obj: content.obj };
@@ -96,23 +113,32 @@ function App() {
   //Menu Options changes
   React.useEffect(() => {
     if (currentLocation === 1) {
-      set_content(getContent());
+      const temp = getContent();
+      set_content(temp);
+      set_temp(temp.sentence);
     }
   }, [menu, currentLocation, getContent]);
 
   //====================================================================
   function onRefresh() {
     set_Refresh(true);
-
-    // set_content(getContent());
   }
 
   React.useEffect(() => {
     if (refresh) {
-      set_content(getContent());
+      const temp = getContent();
+      set_content(temp);
+      set_temp(temp.sentence);
       set_Refresh(false);
     }
   }, [refresh, getContent]);
+
+  useEffect(() => {
+    const text = getContent();
+    set_content(text);
+    set_temp(text.sentence);
+  }, [getContent]);
+
   return (
     <div
       className="App"
@@ -137,9 +163,10 @@ function App() {
                 refresh={refresh}
                 set_Refresh={set_Refresh}
                 set_Data={set_Data}
-                focus={focus}
                 set_focus={set_focus}
                 set_testIsFinished={set_testIsFinished}
+                set_postData={set_postData}
+                focus={focus}
               />
               <div
                 className="refresh-icon"
@@ -161,8 +188,10 @@ function App() {
             {testIsFinished && (
               <>
                 <Graph
+                  postData={postData}
                   data={data}
                   obj={content.obj}
+                  content={temp}
                   nextText={nextText}
                   repeatTest={repeatText}
                   getTestType={getTestType}

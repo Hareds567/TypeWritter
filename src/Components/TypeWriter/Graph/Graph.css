@@ -11,13 +11,14 @@
   grid-template-areas:
     "stats graph"
     "moreStats moreStats";
-  grid-template-columns: 10% 90%;
+  grid-template-columns: 12% 88%;
   grid-template-rows: 200px;
   gap: 1rem;
   width: 100%;
 }
 .chart {
   max-height: 200px;
+  width: 100%;
 }
 .stats {
   grid-area: stats;
