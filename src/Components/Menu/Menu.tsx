@@ -4,7 +4,6 @@ import "./Menu.css";
 //icons
 // import { ReactComponent as Quote } from "../../Icons/quote-left-solid.svg";
 import { Text, length } from "../../Texts/Texts";
-import { Word } from "../../Classes/Word";
 import {
   getRandomTextByType,
   getRandomText,
@@ -17,13 +16,7 @@ interface Props {
       mode: number;
     }>
   >;
-  set_content: React.Dispatch<
-    React.SetStateAction<{
-      sentence: Word[];
-      obj: Text;
-    }>
-  >;
-  set_currenLocation: React.Dispatch<React.SetStateAction<number>>;
+  set_content: React.Dispatch<React.SetStateAction<Text>>;
 }
 export function getLabel() {
   const temp = localStorage.getItem("menu");
@@ -36,7 +29,7 @@ export function getLabel() {
   return final;
 }
 
-const Menu: FC<Props> = ({ set_menu, set_content, set_currenLocation }) => {
+const Menu: FC<Props> = ({ set_menu, set_content }) => {
   const [activeLabel, set_activeLabel] = React.useState(getLabel().activeLabel);
   const [type, set_type] = React.useState(getLabel().type);
   const container = React.useRef<HTMLDivElement>(null);
@@ -48,25 +41,18 @@ const Menu: FC<Props> = ({ set_menu, set_content, set_currenLocation }) => {
     id: number
   ) {
     e.preventDefault();
-    if (activeLabel === id) {
-      id === 0
-        ? set_content(getRandomText())
-        : set_content(getRandomTextByType(id));
-    }
-    getLabel();
-    set_currenLocation(1);
+    //Get content based on type
+    id === 0
+      ? set_content(getRandomText())
+      : set_content(getRandomTextByType(id));
+    //Update Active Label
     set_activeLabel(id);
-    return;
+    //Store current Settings
+    const obj = { activeLabel: id, type: type };
+    localStorage.setItem("menu", JSON.stringify(obj));
   }
 
   //====================================================================
-
-  React.useEffect(() => {
-    const obj = { activeLabel: activeLabel, type: type };
-    localStorage.setItem("menu", JSON.stringify(obj));
-
-    set_menu({ mode: 0, testType: activeLabel });
-  }, [type, activeLabel, set_menu]);
 
   return (
     <div className={`menu-container`} ref={container} id={`menu-container`}>

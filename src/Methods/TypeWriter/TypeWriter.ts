@@ -22,13 +22,12 @@ export function sentenceToWordArr(sentence: string) {
 
 export function getRandomText() {
   const randomIndex = Math.floor(Math.random() * textArr.length);
-  const sentence = sentenceToWordArr(textArr[randomIndex].content);
-  return { sentence, obj: textArr[randomIndex] };
+  return textArr[randomIndex];
 }
 
 export function getRandomTextByType(type: number) {
   const textArr = getTextByType(type);
   const randomIndex = Math.floor(Math.random() * textArr.length);
-  const sentence = sentenceToWordArr(textArr[randomIndex].content);
-  return { sentence, obj: textArr[randomIndex] };
+
+  return textArr[randomIndex];
 }

@@ -1,4 +1,4 @@
-import React, { SetStateAction } from "react";
+import React from "react";
 //Chart
 import Chart, { ChartItem, ChartData } from "chart.js/auto";
 import { Data, PostData } from "../../../Components/TypeWriter/TypeWriter";
@@ -14,25 +14,21 @@ import MoreStats from "./MoreStats/MoreStats";
 import Stats from "./Stats/Stats";
 import Replay from "./Replay/Replay";
 //
-import { Word } from "../../../Classes/Word";
+
 interface Props {
   data: Data;
-  obj: Text;
   nextText: any;
   repeatTest: any;
-  content: Word[];
+  content: Text;
   getTestType: () => string;
-  set_currenLocation: React.Dispatch<SetStateAction<number>>;
   postData: PostData;
 }
 
 const Graph: React.FC<Props> = ({
   data,
-  obj,
   nextText,
   repeatTest,
   getTestType,
-  set_currenLocation,
   content,
   postData,
 }) => {
@@ -75,6 +71,7 @@ const Graph: React.FC<Props> = ({
       data: data2,
       type: "scatter",
       options: {
+        responsive: true,
         hover: {
           mode: "index",
         },
@@ -125,30 +122,26 @@ const Graph: React.FC<Props> = ({
     return () => {
       chart.destroy();
     };
-  }, [data, set_currenLocation]);
+  }, [data]);
 
   return (
     <div className="chart-container">
       <div className="chart-container-subContainer1">
         <div className={"stats"}>
-          <Stats data={data} obj={obj} />
+          <Stats data={data} obj={content} />
         </div>
         <div className={"moreStats"}>
-          <MoreStats data={data} obj={obj} getTestType={getTestType} />
+          <MoreStats data={data} obj={content} getTestType={getTestType} />
         </div>
         <div className={"chart"}>
           <canvas className="graph" ref={chartDiv} id={"chart"}></canvas>
         </div>
       </div>
       <div className={"graph-menu"}>
-        <GraphMenu
-          nextText={nextText}
-          repeatText={repeatTest}
-          set_currenLocation={set_currenLocation}
-        />
+        <GraphMenu nextText={nextText} repeatText={repeatTest} />
       </div>
       <div className="replay">
-        <Replay postData={postData} content={obj.content} />
+        <Replay postData={postData} content={content.content} />
       </div>
     </div>
   );

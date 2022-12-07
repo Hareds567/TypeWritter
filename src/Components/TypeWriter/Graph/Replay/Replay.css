@@ -2,9 +2,9 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  /* outline: 1px solid red; */
+  gap: 0.6rem;
   height: fit-content;
+  line-height: 1rem;
 }
 
 .sentence-container {
@@ -27,8 +27,65 @@
 }
 
 .buttons-button {
+  position: relative;
   cursor: pointer;
   color: var(--color-3);
+  margin-right: 0.4rem;
+}
+
+.buttons-button::after {
+  position: absolute;
+  background-color: hsla(0, 0%, 6%, 0.95);
+  content: attr(data-hover);
+  width: fit-content;
+  padding: 5px 0;
+  transition: opacity 100ms ease-in-out;
+  color: var(--color-2);
+  padding: 0.5rem 1rem;
+  z-index: 10;
+  white-space: nowrap;
+  border-radius: 2px;
+
+  bottom: 130%;
+  left: 50%;
+  transform: translate(-50%);
+
+  opacity: 0;
+  visibility: hidden;
+}
+.buttons-button:hover:before {
+  position: absolute;
+  content: "";
+
+  width: 10px;
+  height: 10px;
+  background-color: hsla(0, 0%, 6%, 0.95);
+  transition: opacity 100ms ease-in-out;
+
+  bottom: 100%;
+  left: 50%;
+  z-index: 11;
+  transform: translate(-50%);
+  rotate: 45deg;
+
+  opacity: 0;
+  visibility: hidden;
+}
+.buttons-button:hover:after {
+  visibility: visible;
+  opacity: 1;
+}
+
+.buttons-button:hover:before {
+  visibility: visible;
+  opacity: 1;
+}
+
+.incorrect2,
+.visited2,
+.letter-container {
+  cursor: pointer;
+  user-select: none;
 }
 
 .buttons-button:hover {
@@ -41,4 +98,44 @@
 }
 .visited2 {
   color: var(--color-2);
+}
+
+.replay-container-timer {
+  color: var(--color-4);
+  cursor: default;
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Old versions of Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently
+                                supported by Chrome, Edge, Opera and Firefox */
+}
+
+.replay-options {
+  display: flex;
+  align-items: center;
+}
+
+.letterContainer-main {
+  position: relative;
+}
+.options-container {
+  position: absolute;
+  display: flex;
+  top: 140%;
+  left: 50%;
+  transform: translate(-50%);
+  background-color: hsla(0, 0%, 6%, 0.95);
+  padding: 0.5rem 0;
+}
+.options-container > div {
+  padding: 0.25rem 1rem;
+  line-height: 1rem;
+  font-size: 1rem;
+  user-select: none;
+}
+.options-container > div:hover {
+  opacity: 0.5;
+  cursor: pointer;
 }

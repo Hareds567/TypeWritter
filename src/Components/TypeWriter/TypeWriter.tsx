@@ -3,12 +3,12 @@ import { useState, useRef, useEffect, FC } from "react";
 import "./styles.css";
 
 import Word from "../../Classes/Word";
-
+import { Text } from "../../Texts/Texts";
 //Components
 import { Word as WordContainer } from "./Word/Word";
-
 //Methods
 import { calculateWPM } from "../../Methods/Graph/Graph";
+import { sentenceToWordArr } from "../../Methods/TypeWriter/TypeWriter";
 import Letter from "../../Classes/Letter";
 
 export type Data = {
@@ -38,6 +38,9 @@ export type Character = {
   inputType: InputType;
   character: string;
   time: number;
+  sentence: Word[];
+  wordIdx: number;
+  letterIdx: number;
 };
 export type PostData = {
   characters: Character[];
@@ -65,7 +68,7 @@ export function createEmptyData() {
 
 interface Props {
   refresh: boolean;
-  content: Word[];
+  content: Text;
   set_Refresh: React.Dispatch<React.SetStateAction<boolean>>;
   set_Data: React.Dispatch<React.SetStateAction<Data>>;
   set_focus: React.Dispatch<React.SetStateAction<boolean>>;
@@ -74,8 +77,16 @@ interface Props {
   focus: boolean;
 }
 
-// const text =
-//   "better known by his pen name and, later, legal name Pablo Neruda, was a Chilean poet-diplomat and politician who won the 1971 Nobel Prize in Literature.";
+//Deep copy of Array
+/**
+ *
+ * @param arr
+ * @returns Returns a Deep copy of an Array<T>
+ */
+function copyArr<T>(arr: Array<T>) {
+  const temp = JSON.parse(JSON.stringify(arr)) as typeof arr;
+  return temp;
+}
 
 const TypeWriter: FC<Props> = ({
   refresh,
@@ -150,7 +161,7 @@ const TypeWriter: FC<Props> = ({
   //====================================================================
   //Update Word on Content Change
   useEffect(() => {
-    set_wordArr(content);
+    set_wordArr(sentenceToWordArr(content.content));
     set_isFocused(true);
     resetValues();
   }, [content]);
@@ -201,11 +212,6 @@ const TypeWriter: FC<Props> = ({
   //====================================================================
 
   function onKeyDown2(e: React.KeyboardEvent<HTMLDivElement>) {
-    let newCharacter: Character = {
-      character: "",
-      inputType: InputType.normal,
-      time: 0,
-    };
     if (
       container.current &&
       (e.code === "Backspace" || e.code === "Space" || e.key.length <= 1)
@@ -220,13 +226,6 @@ const TypeWriter: FC<Props> = ({
         wordArr[wordIndex2.current].letters[letterIndex2.current].letter ===
           e.key
       ) {
-        //Update PostData character
-        newCharacter = {
-          character: e.key,
-          time: new Date().getTime(),
-          inputType: InputType.visited,
-        };
-        postData.current.characters.push(newCharacter);
         //Check if We are at the START of the sentence =========
         if (wordIndex2.current === 0 && letterIndex2.current === 0) {
           set_isActive(true);
@@ -251,7 +250,19 @@ const TypeWriter: FC<Props> = ({
         temp[wordIndex2.current].letters[letterIndex2.current].wasVisited =
           true;
         set_wordArr([...temp]);
+
+        //Update PostData character
+        const newCharacter: Character = {
+          character: e.key,
+          time: new Date().getTime(),
+          inputType: InputType.visited,
+          sentence: copyArr(temp),
+          letterIdx: letterIndex2.current,
+          wordIdx: wordIndex2.current,
+        };
+        //Update Idx
         letterIndex2.current++;
+        postData.current.characters.push(newCharacter);
 
         //Update GUI values
         active_letter_indx.current.letter_idx++;
@@ -265,23 +276,28 @@ const TypeWriter: FC<Props> = ({
         }
         let error = false;
 
-        //Update PostData character
-        newCharacter = {
-          character: e.key,
-          time: new Date().getTime(),
-          inputType: InputType.space,
-        };
-        postData.current.characters.push(newCharacter);
         //Check if there are any errors in a Word
         wordArr[wordIndex2.current].letters.every((letter) => {
           if (letter.incorrect || !letter.wasVisited) {
+            //Data
             data.current.numberOfIncorrectInputs++;
             data.current.numberOfMissedInputs +=
               wordArr[wordIndex2.current].letters.length - letter.id;
             error = true;
-            let temp = [...wordArr];
+            //Update Word[]
+            let temp = copyArr(wordArr);
             temp[wordIndex2.current].isBugged = true;
             set_wordArr([...temp]);
+            //Update PostData character
+            const newCharacter: Character = {
+              character: e.key,
+              time: new Date().getTime(),
+              inputType: InputType.space,
+              sentence: copyArr(temp),
+              letterIdx: letterIndex2.current,
+              wordIdx: wordIndex2.current,
+            };
+            postData.current.characters.push(newCharacter);
             return false;
           }
           return true;
@@ -312,20 +328,13 @@ const TypeWriter: FC<Props> = ({
       //Input is BACKSPACE ---------------------------------
       if (e.code === "Backspace") {
         if (wordIndex2.current === 0 && letterIndex2.current === 0) return;
-        //Update PostData character
-        newCharacter = {
-          character: e.key,
-          time: new Date().getTime(),
-          inputType: InputType.erased,
-        };
-        postData.current.characters.push(newCharacter);
         //Next BACKSPACE leads to previous WORD
         if (letterIndex2.current === 0 && wordIndex2.current > 0) {
           //Update Word Index
           wordIndex2.current--;
           active_letter_indx.current.word_idx--;
           //Update Word Status
-          let temp = [...wordArr];
+          let temp = copyArr(wordArr);
           temp[wordIndex2.current].isBugged = false;
           set_wordArr(temp);
           //Update Letter Index
@@ -338,12 +347,32 @@ const TypeWriter: FC<Props> = ({
                 wordArr[wordIndex2.current].letters.length - 1 - (newIndex - 1);
               active_letter_indx.current.letter_idx = newIndex;
               letterIndex2.current = newIndex;
+              //Update PostData character
+              const newCharacter: Character = {
+                character: e.key,
+                time: new Date().getTime(),
+                inputType: InputType.space,
+                sentence: copyArr(temp),
+                wordIdx: wordIndex2.current,
+                letterIdx: letterIndex2.current,
+              };
+              postData.current.characters.push(newCharacter);
               return false;
             }
             active_letter_indx.current.letter_idx =
               wordArr[wordIndex2.current].letters.length;
 
             letterIndex2.current = wordArr[wordIndex2.current].letters.length;
+            //Update PostData character
+            const newCharacter: Character = {
+              character: e.key,
+              time: new Date().getTime(),
+              inputType: InputType.space,
+              sentence: copyArr(temp),
+              wordIdx: wordIndex2.current,
+              letterIdx: letterIndex2.current,
+            };
+            postData.current.characters.push(newCharacter);
             return true;
           });
 
@@ -388,40 +417,47 @@ const TypeWriter: FC<Props> = ({
         active_letter_indx.current.letter_idx--;
         isDeleting.current = true;
         set_wordArr([...temp]);
+        //Update PostData character
+        const newCharacter: Character = {
+          character: e.key,
+          time: new Date().getTime(),
+          inputType: InputType.space,
+          sentence: copyArr(temp),
+          wordIdx: wordIndex2.current,
+          letterIdx: letterIndex2.current,
+        };
+        postData.current.characters.push(newCharacter);
         return;
       }
 
       // If input does not Match letter ---------------------------------
       if (letterIndex2.current !== wordArr[wordIndex2.current].letters.length) {
         //Update PostData character
-        newCharacter = {
-          character: e.key,
-          time: new Date().getTime(),
-          inputType: InputType.error,
-        };
-        postData.current.characters.push(newCharacter);
         //
         data.current.numberOfIncorrectInputs++;
 
-        let temp = [...wordArr];
+        let temp = copyArr(wordArr);
         temp[wordIndex2.current].letters[letterIndex2.current].incorrect = true;
         temp[wordIndex2.current].letters[letterIndex2.current].wasVisited =
           true;
         set_wordArr([...temp]);
         letterIndex2.current++;
         active_letter_indx.current.letter_idx++;
+        //Update PostData character
+        const newCharacter: Character = {
+          character: e.key,
+          time: new Date().getTime(),
+          inputType: InputType.space,
+          sentence: copyArr(temp),
+          letterIdx: letterIndex2.current,
+          wordIdx: wordIndex2.current,
+        };
+        postData.current.characters.push(newCharacter);
         return;
       }
 
       // Adding Incorrect values to a WORD (Extra Inputs) --------------------------
       if (e.key.length <= 1) {
-        //Update PostData character
-        newCharacter = {
-          character: e.key,
-          time: new Date().getTime(),
-          inputType: InputType.extra,
-        };
-        postData.current.characters.push(newCharacter);
         //Stats
         data.current.numberOfIncorrectInputs++;
         data.current.numberOfExtraInputs++;
@@ -435,15 +471,29 @@ const TypeWriter: FC<Props> = ({
         set_wordArr([...temp]);
         letterIndex2.current++;
         active_letter_indx.current.letter_idx++;
+        //Update PostData character
+        const newCharacter: Character = {
+          character: e.key,
+          time: new Date().getTime(),
+          inputType: InputType.space,
+          sentence: copyArr(temp),
+          letterIdx: letterIndex2.current,
+          wordIdx: wordIndex2.current,
+        };
+        postData.current.characters.push(newCharacter);
         return;
       }
     }
 
     if (e.getModifierState("CapsLock")) {
-      newCharacter = {
+      //Update PostData character
+      const newCharacter: Character = {
         character: e.key,
         time: new Date().getTime(),
-        inputType: InputType.caps,
+        inputType: InputType.space,
+        sentence: copyArr(wordArr),
+        letterIdx: letterIndex2.current,
+        wordIdx: wordIndex2.current,
       };
       postData.current.characters.push(newCharacter);
       set_capsIsOn(true);

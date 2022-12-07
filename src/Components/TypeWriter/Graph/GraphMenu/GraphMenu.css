@@ -4,6 +4,7 @@
   align-items: center;
   justify-content: center;
   gap: 1.5rem;
+  /* outline: 1px solid green; */
 }
 
 .graphMenu-menuItem {
@@ -14,7 +15,6 @@
   cursor: pointer;
   color: var(--color-3);
   width: fit-content;
-  /* outline: 1px solid red; */
   border-radius: 5px;
   padding: 0.8rem 1.5rem;
 }

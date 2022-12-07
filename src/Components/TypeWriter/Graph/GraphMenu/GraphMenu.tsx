@@ -1,4 +1,4 @@
-import React, { SetStateAction } from "react";
+import React from "react";
 import { ReactComponent as ArrowRight } from "../../../../Icons/chevron-right.svg";
 import { ReactComponent as Refresh } from "../../../../Icons/refresh.svg";
 //css
@@ -7,14 +7,9 @@ import "./GraphMenu.css";
 interface Props {
   nextText: any;
   repeatText: any;
-  set_currenLocation: React.Dispatch<SetStateAction<number>>;
 }
 
-const GraphMenu: React.FC<Props> = ({
-  nextText,
-  repeatText,
-  set_currenLocation,
-}) => {
+const GraphMenu: React.FC<Props> = ({ nextText, repeatText }) => {
   return (
     <div className={`graphMenu-container`}>
       <div
@@ -27,7 +22,6 @@ const GraphMenu: React.FC<Props> = ({
         onKeyUp={(e) => {
           if (e.code === "Enter") {
             nextText();
-            set_currenLocation(1);
           }
         }}
       >
@@ -39,11 +33,9 @@ const GraphMenu: React.FC<Props> = ({
         tabIndex={0}
         onClick={() => {
           repeatText();
-          set_currenLocation(2);
         }}
         onKeyUp={(e) => {
           if (e.code === "Enter") {
-            set_currenLocation(2);
             repeatText();
           }
         }}

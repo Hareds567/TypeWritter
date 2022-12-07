@@ -1,5 +1,6 @@
 .menu-container {
   width: 100%;
+  user-select: none;
 }
 
 .menu-subContainer1 {
